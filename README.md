@@ -1,76 +1,72 @@
-# DBBoxAllLauncher
+<div align="center">
 
-**让当贝盒子（Dangbei OS / RK356x，Android 11）允许安装并设为默认的第三方桌面。**
+![DBBoxLauncherUnlock](assets/banner.png)
 
-本仓库即 LSPosed 模块 **DBHomeUnlock**（`me.dbtools.dbhome`）的完整源码与构建脚本。
+# DBBoxLauncherUnlock
 
-## 原理
+**让当贝盒子可以随意安装并设为默认的第三方桌面。**
 
-Dangbei OS 在 `system_server` 的 `PackageManagerService` 里内置了一个 `isNotDangbeiLauncher(String)` 检查：只有包名在 `DANGBEI_LAUNCHERS` / `DANGBEI_CHILD_LAUNCHERS` 白名单里的应用才能出现在 HOME intent 的解析结果中；其余桌面（如 Android TV Launcher、Leanback、第三方 Launcher）在 `applyPostResolutionFilter()` 阶段就被直接 `remove` 掉，连候选资格都进不去。
+</div>
 
-本模块把 `isNotDangbeiLauncher` 恒改为返回 `false`，放开所有桌面。
+当贝盒子出厂时把 HOME（桌面）应用做了白名单：只有自家/合作方的桌面能出现在"选择主屏幕应用"里。装了别的桌面（如 [Aerial](https://github.com/pengchujin/aerial-tv/releases)、[Projectivy](https://play.google.com/store/apps/details?id=com.spocky.projengmenu)、原生 Android TV Launcher 等）在系统里根本看不到。
 
-```
-applyPostResolutionFilter()
-    └─ isNotDangbeiLauncher(pkg)  ← hook 为恒 false
-        └─ 原本返回 true ⇒ 该 ResolveInfo 被移除
-```
+这个 LSPosed 模块解除这个限制，让任意桌面应用都能正常成为默认 HOME。
 
-## 使用方法（LSPosed 模块，推荐）
+## 你需要准备什么
 
-1. 确保盒子已安装并激活 **LSPosed**（`LSPosed-v2.2.1-7939-release` 等）。
-2. 构建或直接获取 `dbhome-unlock.apk`，安装到盒子：
+- 一台 **当贝盒子**（Dangbei OS 4.0，Android 11 验证可用；其他型号待验证）
+- 已获取 Root 权限，并已安装并激活 **LSPosed**（`LSPosed-v2.2.1-7939-release` 或更高版本均可）
+- 一台电脑 + `adb` 连接盒子（`adb connect <盒子IP>:5555`）
+
+> 如果还没上 LSPosed，本项目帮不了你，先去找方法搞定 Magisk/APatch/KernelSU + LSPosed。
+
+## 安装步骤
+
+1. **安装模块 APK**
+
    ```bash
-   adb install out/dbhome-unlock.apk
+   adb install dbboxlauncher-unlock.apk
    ```
-3. 在 LSPosed 管理器中启用模块，作用域勾选 **Android 系统**（`system`）。
-4. 重启盒子或 `adb reboot`。
-5. 安装任意第三方桌面即可在“选择主屏幕应用”里使用。
 
-> 注：模块只勾选 `system` 作用域，不会 Hook 其他应用。
+   > 不会编译的话直接从 [Releases](https://github.com/Higanoneko/DBBoxLauncherUnlock/releases) 下载现成的 APK。想自己构建见 [Dev.md](Dev.md)。
 
-## 从源码构建
+2. **启用模块**
 
-### 前置环境
+   - 打开 LSPosed 管理器 → 模块 → 找到 **DBBoxLauncherUnlock**
+   - 打开开关，作用域勾选 **Android 系统**
 
-- **JDK 17+**（脚本默认指向 `C:\Android\jdk21\...`，可用环境变量 `JAVA_HOME` 覆盖）
-- **Android SDK**（默认路径见脚本顶部，可用 `BUILD_TOOLS`、`ANDROID_JAR` 覆盖）
-  - build-tools `37.0.0`
-  - platform `android-36`
-- **Python 3**（用于把 `classes.dex` 和 `META-INF/xposed` 打进 APK；可用 `PYTHON` 覆盖）
-- 首次构建会自动从 Maven Central 下载 `io.github.libxposed:api:102.0.0`（`.aar`）并提取 `classes.jar` 到 `deps/`；后续构建离线可用
+3. **重启盒子**（必须重启，system_server 需要重新加载）
 
-### 构建模块 APK
+4. **装你想要的桌面**
 
-```powershell
-cd DBBoxLauncherUnlock
-.\build.ps1
-```
+   ```bash
+   adb install <第三方桌面.apk>
+   ```
 
-产物：`out\dbhome-unlock.apk`（首次运行自动生成 `module.keystore` 并签名；keystore 已加入 `.gitignore`）
+   然后在 Android设置 →  设备偏好设置 →  高级设置 →  主屏幕应用里选它即可。
 
-## 仓库结构
+## 验证是否生效
 
-```
-DBBoxLauncherUnlock/
-├── build.ps1                  # 主构建脚本（javac → d8 → aapt2 → apksigner）
-├── AndroidManifest.xml        # 模块清单（xposed minApi=101）
-├── res/                       # app_name 等资源
-├── resources/META-INF/xposed/ # 模块入口 / 作用域 / api 版本声明
-├── src/me/dbtools/dbhome/     # 模块源码（ModuleMain.java）
-├── stubsrc/                   # 编译期 stub（androidx.annotation / libxposed.annotation）
-├── stubsrc/                   # 编译期 stub（androidx.annotation / libxposed.annotation）
-└── deps/                      # 构建时自动下载的依赖缓存（libxposed-api classes.jar，已 gitignore）
-```
+- 重启后如果 LSPosed 日志（`logcat -s DBBoxLauncherUnlock`）出现 `hooked isNotDangbeiLauncher OK`，说明 hook 成功。
+- 装第三方桌面后按 HOME 键，弹出"选择主屏幕应用"对话框即表示解锁成功。
 
-## 兼容性说明
+## 常见问题
 
-- 仅在 **RK3566 / Dangbei OS (Android 11)** 固件上验证过。
-- `isNotDangbeiLauncher` 是该固件特有的私有方法，其他品牌/型号不一定存在；若方法不存在模块会打印 hook 失败日志，不影响系统。
-- 通过 `logcat -s [DBHomeUnlock]` 可查看 hook 状态。
+**Q: 启用后看不到效果？**
+检查 LSPosed 里模块是否已勾选 + 作用域是否是"Android 系统"+ 是否重启过盒子。
+
+**Q: 我的盒子不是 当贝H3 OS 4.0.0.2 可以用吗？**
+不确定。这个 hook 是针对当贝 OS 某个私有方法的，不同固件不一定存在该方法。模块找不到方法时会打印失败日志，但不会影响系统。可自行尝试。
+当然，你也可以拿到相关资料后交给我，我来处理。
+
+**Q: 会影响系统更新 / 其他应用吗？**
+不会。模块作用域只勾 `system`，不 hook 其他应用；副作用仅限放开桌面白名单。
+
+## 相关链接
+
+- 构建、原理、调试细节：[Dev.md](Dev.md)
+- 第三方组件声明：[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)
 
 ## License
 
 Apache License 2.0 — 见 [LICENSE](LICENSE)。
-
-第三方组件声明见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)（vendored `libxposed-api` 代码来自 [libxposed/api](https://github.com/libxposed/api)，同样为 Apache-2.0）。

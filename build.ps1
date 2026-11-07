@@ -45,7 +45,7 @@ Write-Host '== javac module =='
 & "$JAVA\javac.exe" -source 17 -target 17 -nowarn -parameters `
     -cp "$AJAR;$API_JAR;$M\out\stub-classes" `
     -d "$M\out\classes" `
-    "$M\src\me\dbtools\dbhome\ModuleMain.java"
+    "$M\src\io\github\dbboxlauncherunlock\ModuleMain.java"
 if ($LASTEXITCODE) { throw 'javac module failed' }
 
 # ---- 3. 打 jar / d8 ----
@@ -81,18 +81,18 @@ if ($LASTEXITCODE) { throw 'zipalign failed' }
 if (-not (Test-Path "$M\module.keystore")) {
     Write-Host '== gen keystore =='
     & "$JAVA\keytool.exe" -genkeypair -v -keystore "$M\module.keystore" `
-        -alias dbhome -keyalg RSA -keysize 2048 -validity 10000 `
+        -alias dbboxlauncher -keyalg RSA -keysize 2048 -validity 10000 `
         -storepass android -keypass android `
-        -dname "CN=DBHomeUnlock, OU=tools, O=dbtools" 2>$null
+        -dname "CN=DBBoxLauncherUnlock, OU=tools, O=dbtools" 2>$null
     if ($LASTEXITCODE) { throw 'keytool failed' }
 }
 
 Write-Host '== apksigner =='
 & "$BT\apksigner.bat" sign --ks "$M\module.keystore" `
     --ks-pass pass:android --key-pass pass:android `
-    --out "$M\out\dbhome-unlock.apk" `
+    --out "$M\out\dbboxlauncher-unlock.apk" `
     "$M\out\module-aligned.apk"
 if ($LASTEXITCODE) { throw 'apksigner failed' }
 
-Write-Host "`n== DONE -> $M\out\dbhome-unlock.apk =="
-Get-Item "$M\out\dbhome-unlock.apk" | Format-Table Name,Length
+Write-Host "`n== DONE -> $M\out\dbboxlauncher-unlock.apk =="
+Get-Item "$M\out\dbboxlauncher-unlock.apk" | Format-Table Name,Length

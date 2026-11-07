@@ -1,4 +1,4 @@
-package me.dbtools.dbhome;
+package io.github.dbboxlauncherunlock;
 
 import android.util.Log;
 
@@ -19,7 +19,7 @@ import io.github.libxposed.api.XposedModule;
  * 本模块把 isNotDangbeiLauncher 恒改为返回 false，放开全部桌面。
  */
 public class ModuleMain extends XposedModule {
-    private static final String TAG = "[DBHomeUnlock]";
+    private static final String TAG = "[DBBoxLauncherUnlock]";
     private static final String PMS = "com.android.server.pm.PackageManagerService";
 
     private void installHook(ClassLoader cl, String where) {
