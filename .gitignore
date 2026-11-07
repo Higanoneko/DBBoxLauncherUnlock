@@ -1,0 +1,32 @@
+# ---- 构建产物 ----
+out/
+flat/
+**/out/
+**/flat/
+*.apk
+*.apks
+*.idsig
+*.class
+*.dex
+*.jar
+
+# ---- 本地签名密钥（构建时自动生成，勿提交）----
+module.keystore
+*.keystore
+*.jks
+
+# ---- 依赖缓存（构建时自动下载，勿提交）----
+deps/
+
+# ---- IDE / 编辑器 ----
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# ---- 系统垃圾 ----
+Thumbs.db
+Desktop.ini
+.DS_Store
